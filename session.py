@@ -1,46 +1,39 @@
-from login_user import *
-from datetime import datetime
+from def_library import *
 from validators import is_float
 from user_data import User
+from def_library import get_input
+from storage import save_user_info
 
-
-
-
-
-
-def time_now():
-    now = datetime.now()
-    year = now.year
-    month = now.month
-    day = now.day
-    return f'{year}-{month}-{day}'
 
 class Balance(User):
 
     def view_balance(self):
         print(f'Your balance: {is_float(self.balance)}')
 
-    def add_money(self):
-        money = float(input('How many will you add: '))
-        time = time_now()
-        self.balance += money
-        return money, time
+    def handle_transaction(self, txt: str, is_income: bool):
+        amount = float(get_input(txt))
+        self.balance += amount if is_income else -amount
+        return amount
 
-    def take_money(self):
-        money = float(input('How many will you take: '))
-        time = time_now()
-        self.balance -= money
-        return money, time
-
+    def record_transaction(self, amount: float, is_income: bool):
+        self.budget_data['Balance'] = is_float(self.balance)
+        entry = {'amount': amount, 'date': time_now()}
+        if is_income:
+            self.incomes.append(entry)
+        else:
+            self.expenses.append(entry)
 
 
 class Menu(Balance):
 
+    def save_changes(self):
+        if ask_yes_or_no('Do you want to save new changes'):
+            save_user_info(self.username, self.budget_data)
 
     @staticmethod
     def print_menu():
         print('1. View balance\n2. Add money\n3. Take money\n4. Logg out\n5. Quit')
-        return input('Enter a number: ')
+        return get_input('Enter a number: ')
 
 
     def main_menu(self, choice):
@@ -48,24 +41,20 @@ class Menu(Balance):
             case '1':
                 self.view_balance()
             case '2':
-                amount, time = self.add_money()
-                self.budget_data['Balance'] = self.balance
-                self.incomes.append({'amount':amount, 'date': time})
+                amount = self.handle_transaction('How many will you add: ', True)
+                self.record_transaction(amount, True)
             case '3':
-                amount, time = self.take_money()
-                self.budget_data['Balance'] = is_float(self.balance)
-                self.expenses.append({'amount': amount, 'date': time})
+                amount = self.handle_transaction('How many will you take: ', False)
+                self.record_transaction(amount, False)
             case '4':
-                if yes_no_q('Do you want to save new changes'):
-                    dump_json(self.user_info, self.budget_data)
-                if yes_no_q('Are you sure you want to logg out'):
+                self.save_changes()
+                if ask_yes_or_no('Are you sure you want to logg out'):
                     from main import main
                     print('You logged out!')
                     main()
             case '5':
-                if yes_no_q('Do you want to save new changes'):
-                    dump_json(self.user_info, self.budget_data)
-                if yes_no_q('Are you sure you want to exit'):
+                self.save_changes()
+                if ask_yes_or_no('Are you sure you want to exit'):
                     quit()
             case _:
                 print('Wrong command.')
@@ -73,6 +62,8 @@ class Menu(Balance):
 
 if __name__ == '__main__':
     pass
+
+
 
 
 

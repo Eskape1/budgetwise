@@ -1,4 +1,4 @@
-from session import *
+from session import Menu
 
 def main():
     m = Menu()
@@ -6,3 +6,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
